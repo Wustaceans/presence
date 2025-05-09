@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 discord-rich-presence = "0.2.5"
 iced = "0.13.1"
+iced_aw = "0.12.2"
