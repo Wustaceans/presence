@@ -1,19 +1,21 @@
 use std::fmt::Display;
 
 use discord_rich_presence::activity::{ActivityType, Assets};
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use iced::widget::{button, column, container, row, text, text_input, Column, Renderer, Row};
+use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
+use iced::widget::{
+    Column, Renderer, Row, button, checkbox, column, container, row, text, text_input,
+};
 use iced::{Element, Length, Theme};
-use iced_aw::{drop_down, DropDown};
+use iced_aw::{DropDown, drop_down};
 
 type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Debug, Clone, Default)]
 struct Asset {
-    large_image: Option<String>,
-    large_text: Option<String>,
-    small_image: Option<String>,
-    small_text: Option<String>,
+    large_image: String,
+    large_text: String,
+    small_image: String,
+    small_text: String,
 }
 
 #[derive(Debug, Clone)]
@@ -23,6 +25,7 @@ enum Message {
     ChangeAssets(Option<Asset>),
     ChangeActivityType(u8),
     Select(ActivityTypeChoice),
+    AssetToggle(bool),
     Dismiss,
     Expand,
     Start,
@@ -65,6 +68,7 @@ struct App {
     state: String,
     details: String,
     assets: Option<Asset>,
+    asset_menu: bool,
     activity_type: ActivityTypeChoice,
     selected: ActivityTypeChoice,
     expanded: bool,
@@ -91,12 +95,56 @@ impl App {
             .on_dismiss(Message::Dismiss)
             .alignment(drop_down::Alignment::Bottom);
 
-        container(column![
+        let column = column![
             text_input("Title (State)", &self.state).on_input(Message::ChangeState),
+            text_input("Details", &self.details).on_input(Message::ChangeDetails),
+            // open alternate asset menu
+            checkbox("Assets", self.asset_menu).on_toggle(Message::AssetToggle),
             button(text("Start IPC Server")).on_press(Message::Start),
-            drop_down
-        ])
-        .into()
+            drop_down,
+            text_input(
+                "Large Image Asset Name",
+                &self
+                    .assets
+                    .clone()
+                    .unwrap_or(Asset {
+                        ..Default::default()
+                    })
+                    .large_image
+            ),
+            text_input(
+                "Small Image Asset Name",
+                &self
+                    .assets
+                    .clone()
+                    .unwrap_or(Asset {
+                        ..Default::default()
+                    })
+                    .small_image
+            ),
+            text_input(
+                "Large text",
+                &self
+                    .assets
+                    .clone()
+                    .unwrap_or(Asset {
+                        ..Default::default()
+                    })
+                    .large_text
+            ),
+            text_input(
+                "Small text",
+                &self
+                    .assets
+                    .clone()
+                    .unwrap_or(Asset {
+                        ..Default::default()
+                    })
+                    .small_text
+            )
+        ];
+
+        container(column).into()
     }
     fn update(&mut self, message: Message) {
         match message {
@@ -122,17 +170,21 @@ impl App {
             }
             Message::Dismiss => self.expanded = false,
             Message::Expand => self.expanded = !self.expanded,
+            Message::AssetToggle(toggled) => self.asset_menu = toggled,
             Message::Start => {
                 let mut client = DiscordIpcClient::new("1276619507460214804");
+
+                let assets = self.assets.as_mut().unwrap();
+
                 let payload = activity::Activity::new()
                     .state(&self.state)
-                    .details("All hail Ferris")
+                    .details(&self.details)
                     .assets(
                         Assets::new()
-                            .large_text("")
-                            .large_image("")
-                            .small_text("")
-                            .small_image(""),
+                            .large_text(assets.large_text.as_mut_str())
+                            .large_image(assets.large_image.as_mut_str())
+                            .small_text(assets.small_text.as_mut_str())
+                            .small_image(assets.small_image.as_mut_str()),
                     )
                     .activity_type(self.selected.clone().into());
                 let _ = client.as_mut().expect("").connect();
