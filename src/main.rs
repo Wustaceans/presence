@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use discord_rich_presence::activity::{ActivityType, Assets};
 use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
 use iced::widget::{
@@ -7,6 +5,7 @@ use iced::widget::{
 };
 use iced::{Element, Length, Theme};
 use iced_aw::{DropDown, drop_down};
+use std::fmt::Display;
 
 type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -22,10 +21,9 @@ struct Asset {
 enum Message {
     ChangeState(String),
     ChangeDetails(String),
-    ChangeAssets(Option<Asset>),
+    ChangeAssets(String, String),
     ChangeActivityType(u8),
     Select(ActivityTypeChoice),
-    AssetToggle(bool),
     Dismiss,
     Expand,
     Start,
@@ -67,7 +65,7 @@ const CHOICES: [ActivityTypeChoice; 4] = [
 struct App {
     state: String,
     details: String,
-    assets: Option<Asset>,
+    assets: Asset,
     asset_menu: bool,
     activity_type: ActivityTypeChoice,
     selected: ActivityTypeChoice,
@@ -99,49 +97,16 @@ impl App {
             text_input("Title (State)", &self.state).on_input(Message::ChangeState),
             text_input("Details", &self.details).on_input(Message::ChangeDetails),
             // open alternate asset menu
-            checkbox("Assets", self.asset_menu).on_toggle(Message::AssetToggle),
             button(text("Start IPC Server")).on_press(Message::Start),
             drop_down,
-            text_input(
-                "Large Image Asset Name",
-                &self
-                    .assets
-                    .clone()
-                    .unwrap_or(Asset {
-                        ..Default::default()
-                    })
-                    .large_image
-            ),
-            text_input(
-                "Small Image Asset Name",
-                &self
-                    .assets
-                    .clone()
-                    .unwrap_or(Asset {
-                        ..Default::default()
-                    })
-                    .small_image
-            ),
-            text_input(
-                "Large text",
-                &self
-                    .assets
-                    .clone()
-                    .unwrap_or(Asset {
-                        ..Default::default()
-                    })
-                    .large_text
-            ),
-            text_input(
-                "Small text",
-                &self
-                    .assets
-                    .clone()
-                    .unwrap_or(Asset {
-                        ..Default::default()
-                    })
-                    .small_text
-            )
+            text_input("Large Image Asset Name", &self.assets.clone().large_image)
+                .on_input(|c| Message::ChangeAssets("large_image".to_string(), c)),
+            text_input("Small Image Asset Name", &self.assets.clone().small_image)
+                .on_input(|c| Message::ChangeAssets("small_image".to_string(), c)),
+            text_input("Large text", &self.assets.clone().large_text)
+                .on_input(|c| Message::ChangeAssets("large_text".to_string(), c)),
+            text_input("Small text", &self.assets.clone().small_text)
+                .on_input(|c| Message::ChangeAssets("small_text".to_string(), c))
         ];
 
         container(column).into()
@@ -154,9 +119,13 @@ impl App {
             Message::ChangeDetails(details) => {
                 self.details = details;
             }
-            Message::ChangeAssets(assets) => {
-                self.assets = assets;
-            }
+            Message::ChangeAssets(assets, input) => match assets.as_str() {
+                "small_text" => self.assets.small_text = input.to_string(),
+                "large_text" => self.assets.large_text = input.to_string(),
+                "small_image" => self.assets.small_image = input.to_string(),
+                "large_image" => self.assets.large_image = input.to_string(),
+                _ => unreachable!(),
+            },
             Message::ChangeActivityType(activity_type) => match activity_type {
                 0 => self.activity_type = ActivityTypeChoice::Playing,
                 2 => self.activity_type = ActivityTypeChoice::Listening,
@@ -170,21 +139,18 @@ impl App {
             }
             Message::Dismiss => self.expanded = false,
             Message::Expand => self.expanded = !self.expanded,
-            Message::AssetToggle(toggled) => self.asset_menu = toggled,
             Message::Start => {
                 let mut client = DiscordIpcClient::new("1276619507460214804");
-
-                let assets = self.assets.as_mut().unwrap();
 
                 let payload = activity::Activity::new()
                     .state(&self.state)
                     .details(&self.details)
                     .assets(
                         Assets::new()
-                            .large_text(assets.large_text.as_mut_str())
-                            .large_image(assets.large_image.as_mut_str())
-                            .small_text(assets.small_text.as_mut_str())
-                            .small_image(assets.small_image.as_mut_str()),
+                            .large_text(self.assets.large_text.as_mut_str())
+                            .large_image(self.assets.large_image.as_mut_str())
+                            .small_text(self.assets.small_text.as_mut_str())
+                            .small_image(self.assets.small_image.as_mut_str()),
                     )
                     .activity_type(self.selected.clone().into());
                 let _ = client.as_mut().expect("").connect();
