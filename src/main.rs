@@ -1,8 +1,6 @@
 use discord_rich_presence::activity::{ActivityType, Assets};
 use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
-use iced::widget::{
-    Column, Renderer, Row, button, checkbox, column, container, row, text, text_input,
-};
+use iced::widget::{Column, Renderer, Row, button, column, container, row, text, text_input};
 use iced::{Element, Length, Theme};
 use iced_aw::{DropDown, drop_down};
 use std::fmt::Display;
@@ -22,7 +20,6 @@ enum Message {
     ChangeState(String),
     ChangeDetails(String),
     ChangeAssets(String, String),
-    ChangeActivityType(u8),
     Select(ActivityTypeChoice),
     Dismiss,
     Expand,
@@ -43,9 +40,10 @@ impl Display for ActivityTypeChoice {
         write!(f, "{:?}", self)
     }
 }
-impl Into<ActivityType> for ActivityTypeChoice {
-    fn into(self) -> ActivityType {
-        match self {
+
+impl From<ActivityTypeChoice> for ActivityType {
+    fn from(val: ActivityTypeChoice) -> Self {
+        match val {
             ActivityTypeChoice::Playing => ActivityType::Playing,
             ActivityTypeChoice::Listening => ActivityType::Listening,
             ActivityTypeChoice::Watching => ActivityType::Watching,
@@ -66,8 +64,6 @@ struct App {
     state: String,
     details: String,
     assets: Asset,
-    asset_menu: bool,
-    activity_type: ActivityTypeChoice,
     selected: ActivityTypeChoice,
     expanded: bool,
 }
@@ -124,13 +120,6 @@ impl App {
                 "large_text" => self.assets.large_text = input.to_string(),
                 "small_image" => self.assets.small_image = input.to_string(),
                 "large_image" => self.assets.large_image = input.to_string(),
-                _ => unreachable!(),
-            },
-            Message::ChangeActivityType(activity_type) => match activity_type {
-                0 => self.activity_type = ActivityTypeChoice::Playing,
-                2 => self.activity_type = ActivityTypeChoice::Listening,
-                3 => self.activity_type = ActivityTypeChoice::Watching,
-                5 => self.activity_type = ActivityTypeChoice::Competing,
                 _ => unreachable!(),
             },
             Message::Select(choice) => {
