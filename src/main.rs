@@ -172,7 +172,8 @@ impl App {
             Message::Dismiss => self.expanded = false,
             Message::Expand => self.expanded = !self.expanded,
             Message::Start => {
-                let mut client = DiscordIpcClient::new("1276619507460214804");
+                let mut client = DiscordIpcClient::new("1276619507460214804")
+                    .expect("failed to connect to client ID");
 
                 let payload = activity::Activity::new()
                     .state(&self.state)
@@ -185,8 +186,13 @@ impl App {
                             .collect(),
                     )
                     .activity_type(self.selected.clone().into());
-                let _ = client.as_mut().expect("").connect();
-                let _ = client.as_mut().expect("").set_activity(payload);
+
+                client
+                    .connect()
+                    .expect("something went wrong while connecting");
+                client
+                    .set_activity(payload)
+                    .expect("something went wrong while setting activity");
             }
         }
     }
