@@ -1,13 +1,12 @@
 use discord_rich_presence::activity::{ActivityType, Assets, Button as Temp};
-use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
-use iced::widget::{Column, Renderer, Row, button, column, container, row, text, text_input};
+use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use iced::widget::{button, column, container, row, text, text_input, Column, Renderer, Row};
 use iced::{Element, Length, Theme};
-use iced_aw::{DropDown, drop_down};
+use iced_aw::{drop_down, DropDown};
 use std::fmt::Display;
 use std::ops::{Index, IndexMut};
 
 type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
-type Button = discord_rich_presence::activity::Button<'static>;
 
 #[derive(Debug, Clone, Default)]
 struct Asset {
@@ -64,7 +63,7 @@ impl From<ActivityTypeChoice> for ActivityType {
 impl Default for App {
     fn default() -> Self {
         Self {
-            buttons: Vec::with_capacity(2),
+            buttons: vec![ActivityButton::default(), ActivityButton::default()],
             state: String::new(),
             details: String::new(),
             assets: Asset::default(),
