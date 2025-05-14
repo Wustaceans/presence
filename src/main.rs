@@ -6,14 +6,22 @@ use iced_aw::{DropDown, drop_down};
 use std::fmt::Display;
 use std::ops::{Index, IndexMut};
 
-type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
-
 #[derive(Debug, Clone, Default)]
 struct Asset {
     large_image: String,
     large_text: String,
     small_image: String,
     small_text: String,
+}
+
+impl<'a> From<&'a Asset> for Assets<'a> {
+    fn from(val: &'a Asset) -> Assets<'a> {
+        Assets::new()
+            .large_text(&val.large_text)
+            .large_image(&val.large_image)
+            .small_text(&val.small_text)
+            .small_image(&val.small_image)
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -91,6 +99,13 @@ struct App {
 
 impl App {
     fn view(&self) -> Element<Message> {
+        macro_rules! asset_input {
+            ($label:expr, $field:ident) => {
+                text_input($label, &self.assets.$field)
+                    .on_input(|c| Message::ChangeAssets(stringify!($field).to_string(), c))
+            };
+        }
+
         let underlay: Row<'_, Message, _, _> = row![
             text(format!("Selected: {}", self.selected)),
             button(text("expand")).on_press(Message::Expand)
@@ -115,15 +130,11 @@ impl App {
             text_input("Details", &self.details).on_input(Message::ChangeDetails),
             drop_down,
             // Assets
-            text_input("Large Image Asset Name", &self.assets.clone().large_image)
-                .on_input(|c| Message::ChangeAssets("large_image".to_string(), c)),
-            text_input("Small Image Asset Name", &self.assets.clone().small_image)
-                .on_input(|c| Message::ChangeAssets("small_image".to_string(), c)),
-            text_input("Large text", &self.assets.clone().large_text)
-                .on_input(|c| Message::ChangeAssets("large_text".to_string(), c)),
-            text_input("Small text", &self.assets.clone().small_text)
-                .on_input(|c| Message::ChangeAssets("small_text".to_string(), c)),
-            // buttons
+            asset_input!("Large Image Asset Name", large_image),
+            asset_input!("Small Image Asset Name", small_image),
+            asset_input!("Large text", large_text),
+            asset_input!("Small text", small_text),
+            // Buttons
             text_input("Button 1 Label", &self.buttons.index(0).clone().label)
                 .on_input(|c| Message::ChangeButtons("label_one".to_string(), c)),
             // Start RPC
@@ -166,13 +177,7 @@ impl App {
                 let payload = activity::Activity::new()
                     .state(&self.state)
                     .details(&self.details)
-                    .assets(
-                        Assets::new()
-                            .large_text(self.assets.large_text.as_mut_str())
-                            .large_image(self.assets.large_image.as_mut_str())
-                            .small_text(self.assets.small_text.as_mut_str())
-                            .small_image(self.assets.small_image.as_mut_str()),
-                    )
+                    .assets((&self.assets).into())
                     .buttons(
                         self.buttons
                             .iter()
@@ -187,14 +192,9 @@ impl App {
     }
 }
 
-fn main() -> AppResult<()> {
+fn main() -> iced::Result {
     iced::application("presence", App::update, App::view)
         .theme(|_| Theme::Dark)
         .window_size((400.0, 400.0))
-        .run()?;
-
-    // kill the presence when program is closed
-    std::thread::park();
-
-    Ok(())
+        .run()
 }
