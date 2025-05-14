@@ -1,8 +1,8 @@
-use discord_rich_presence::activity::{ActivityType, Assets, Button as Temp};
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use iced::widget::{button, column, container, row, text, text_input, Column, Renderer, Row};
+use discord_rich_presence::activity::{ActivityType, Assets, Button};
+use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
+use iced::widget::{Column, Renderer, Row, button, column, container, row, text, text_input};
 use iced::{Element, Length, Theme};
-use iced_aw::{drop_down, DropDown};
+use iced_aw::{DropDown, drop_down};
 use std::fmt::Display;
 use std::ops::{Index, IndexMut};
 
@@ -141,25 +141,17 @@ impl App {
                 self.details = details;
             }
             Message::ChangeAssets(assets, input) => match assets.as_str() {
-                "small_text" => self.assets.small_text = input.to_string(),
-                "large_text" => self.assets.large_text = input.to_string(),
-                "small_image" => self.assets.small_image = input.to_string(),
-                "large_image" => self.assets.large_image = input.to_string(),
+                "small_text" => self.assets.small_text = input,
+                "large_text" => self.assets.large_text = input,
+                "small_image" => self.assets.small_image = input,
+                "large_image" => self.assets.large_image = input,
                 _ => unreachable!(),
             },
-            Message::ChangeButtons(button, input) => match button {
-                val if val == "label_one".to_string() => {
-                    self.buttons.index_mut(0).label = input.to_string()
-                }
-                val if val == "url_one".to_string() => {
-                    self.buttons.index_mut(0).url = input.to_string()
-                }
-                val if val == "label_two".to_string() => {
-                    self.buttons.index_mut(1).label = input.to_string()
-                }
-                val if val == "large_image".to_string() => {
-                    self.buttons.index_mut(1).url = input.to_string()
-                }
+            Message::ChangeButtons(button, input) => match button.as_str() {
+                "label_one" => self.buttons.index_mut(0).label = input,
+                "url_one" => self.buttons.index_mut(0).url = input,
+                "label_two" => self.buttons.index_mut(1).label = input,
+                "large_image" => self.buttons.index_mut(1).url = input,
                 _ => unreachable!(),
             },
             Message::Select(choice) => {
@@ -184,7 +176,7 @@ impl App {
                     .buttons(
                         self.buttons
                             .iter()
-                            .map(|b| Temp::new(b.label.as_str(), b.url.as_str()))
+                            .map(|b| Button::new(b.label.as_str(), b.url.as_str()))
                             .collect(),
                     )
                     .activity_type(self.selected.clone().into());
