@@ -1,34 +1,11 @@
-use discord_rich_presence::activity::{ActivityType, Assets, Button};
-use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
-use iced::widget::{Column, Renderer, Row, button, column, container, row, text, text_input};
+mod wrappers;
+use crate::wrappers::*;
+use discord_rich_presence::activity::Button;
+use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use iced::widget::{button, column, container, row, text, text_input, Column, Renderer, Row};
 use iced::{Element, Length, Theme};
-use iced_aw::{DropDown, drop_down};
-use std::fmt::Display;
+use iced_aw::{drop_down, DropDown};
 use std::ops::{Index, IndexMut};
-
-#[derive(Debug, Clone, Default)]
-struct Asset {
-    large_image: String,
-    large_text: String,
-    small_image: String,
-    small_text: String,
-}
-
-impl<'a> From<&'a Asset> for Assets<'a> {
-    fn from(val: &'a Asset) -> Assets<'a> {
-        Assets::new()
-            .large_text(&val.large_text)
-            .large_image(&val.large_image)
-            .small_text(&val.small_text)
-            .small_image(&val.small_image)
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-struct ActivityButton {
-    label: String,
-    url: String,
-}
 
 #[derive(Debug, Clone)]
 enum Message {
@@ -40,32 +17,6 @@ enum Message {
     Dismiss,
     Expand,
     Start,
-}
-
-#[derive(Clone, Debug, Default)]
-enum ActivityTypeChoice {
-    #[default]
-    Playing,
-    Listening,
-    Watching,
-    Competing,
-}
-
-impl Display for ActivityTypeChoice {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl From<ActivityTypeChoice> for ActivityType {
-    fn from(val: ActivityTypeChoice) -> Self {
-        match val {
-            ActivityTypeChoice::Playing => ActivityType::Playing,
-            ActivityTypeChoice::Listening => ActivityType::Listening,
-            ActivityTypeChoice::Watching => ActivityType::Watching,
-            ActivityTypeChoice::Competing => ActivityType::Competing,
-        }
-    }
 }
 
 impl Default for App {
