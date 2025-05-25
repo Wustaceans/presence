@@ -9,6 +9,7 @@ use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone)]
 enum Message {
+    ChangeClientID(String),
     ChangeState(String),
     ChangeDetails(String),
     ChangeAssets(String, String),
@@ -29,6 +30,7 @@ impl Default for App {
             selected: ActivityTypeChoice::default(),
             expanded: false,
             client: None,
+            client_id: String::new(),
         }
     }
 }
@@ -48,6 +50,7 @@ struct App {
     selected: ActivityTypeChoice,
     expanded: bool,
     client: Option<DiscordIpcClient>,
+    client_id: String,
 }
 
 impl App {
@@ -79,6 +82,7 @@ impl App {
             .alignment(drop_down::Alignment::Bottom);
 
         let column = column![
+            text_input("Client ID", &self.client_id).on_input(Message::ChangeClientID),
             text_input("Title (State)", &self.state).on_input(Message::ChangeState),
             text_input("Details", &self.details).on_input(Message::ChangeDetails),
             drop_down,
@@ -98,6 +102,9 @@ impl App {
     }
     fn update(&mut self, message: Message) {
         match message {
+            Message::ChangeClientID(id) => {
+                self.client_id = id;
+            }
             Message::ChangeState(state) => {
                 self.state = state;
             }
@@ -126,8 +133,8 @@ impl App {
             // toggle self.expanded
             Message::Expand => self.expanded = !self.expanded,
             Message::Start => {
-                let mut client = DiscordIpcClient::new("1276619507460214804")
-                    .expect("failed to connect to client ID");
+                let mut client =
+                    DiscordIpcClient::new(&self.client_id).expect("failed to connect to client ID");
 
                 client
                     .connect()
