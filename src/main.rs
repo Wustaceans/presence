@@ -1,10 +1,10 @@
 mod wrappers;
 use crate::wrappers::*;
 use discord_rich_presence::activity::Button;
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use iced::widget::{button, column, container, row, text, text_input, Column, Renderer, Row};
+use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
+use iced::widget::{Column, Renderer, Row, button, column, container, row, text, text_input};
 use iced::{Element, Length, Theme};
-use iced_aw::{drop_down, DropDown};
+use iced_aw::{DropDown, drop_down};
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone)]
@@ -28,6 +28,7 @@ impl Default for App {
             assets: Asset::default(),
             selected: ActivityTypeChoice::default(),
             expanded: false,
+            client: None,
         }
     }
 }
@@ -46,6 +47,7 @@ struct App {
     buttons: Vec<ActivityButton>,
     selected: ActivityTypeChoice,
     expanded: bool,
+    client: Option<DiscordIpcClient>,
 }
 
 impl App {
@@ -121,10 +123,15 @@ impl App {
                 self.expanded = false;
             }
             Message::Dismiss => self.expanded = false,
+            // toggle self.expanded
             Message::Expand => self.expanded = !self.expanded,
             Message::Start => {
                 let mut client = DiscordIpcClient::new("1276619507460214804")
                     .expect("failed to connect to client ID");
+
+                client
+                    .connect()
+                    .expect("something went wrong while connecting");
 
                 let payload = activity::Activity::new()
                     .state(&self.state)
@@ -133,17 +140,18 @@ impl App {
                     .buttons(
                         self.buttons
                             .iter()
-                            .map(|b| Button::new(b.label.as_str(), b.url.as_str()))
+                            // Compose the Vec of non-empty buttons
+                            .filter(|b| !b.label.is_empty() && !b.url.is_empty())
+                            .map(|b| Button::new(&b.label, &b.url))
                             .collect(),
                     )
                     .activity_type(self.selected.clone().into());
 
                 client
-                    .connect()
-                    .expect("something went wrong while connecting");
-                client
                     .set_activity(payload)
                     .expect("something went wrong while setting activity");
+
+                self.client = Some(client);
             }
         }
     }
